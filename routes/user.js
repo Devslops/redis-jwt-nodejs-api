@@ -11,7 +11,6 @@ let userModel = require('../models/users')
 let client    = redis.createClient({
     port: 6379,               // replace with your port
     host: 'localhost',        // replace with your hostanme or IP address
-    password: 'root',
 });
 client.on("error", function(error) {
     console.error(error);

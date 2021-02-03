@@ -3,8 +3,19 @@ var router = express.Router()
 const jwtUtils = require('../utils/jwt.utils')
 let validator = require("email-validator");
 const sha256 = require('sha256')
+let redis = require('redis')
 
 let userModel = require('../models/users')
+
+//Connexion to Redis
+let client    = redis.createClient({
+    port: 6379,               // replace with your port
+    host: 'localhost',        // replace with your hostanme or IP address
+    password: 'root',
+});
+client.on("error", function(error) {
+    console.error(error);
+});
 
 //Enregistrement de l'utilisateur
 router.post('/user/register', (req,res) => {
@@ -78,10 +89,15 @@ router.post('/user/login', (req,res) => {
     .then((userFound) => {
         //Utilisateur existe
         if(userFound) {
+            let token = client.get(userfound.id, redis.print())
+            if (!token) {
+                token = jwtUtils.generateToken(userFound)
+                client.set(userFound.id, token, 'EX', 60*60, redis.print())
+            }
             //Retourne l'id et le token du user
             return res.status(200).json({
                 'userId': userFound.id,
-                'token': jwtUtils.generateToken(userFound)
+                'token': token
             });
         } else {
             return res.status(404).json({ 'erreur': "utilisateur n'existe pas"})

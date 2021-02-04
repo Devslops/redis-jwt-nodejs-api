@@ -88,22 +88,27 @@ router.post('/user/login', (req,res) => {
     .then((userFound) => {
         //Utilisateur existe
         if(userFound) {
-            let token = client.get(userfound.id, redis.print())
-            if (!token) {
-                token = jwtUtils.generateToken(userFound)
-                client.set(userFound.id, token, 'EX', 60*60, redis.print())
-            }
-            //Retourne l'id et le token du user
-            return res.status(200).json({
-                'userId': userFound.id,
-                'token': token
-            });
+            client.get(userFound.id, (err, reply) => {
+                if (err) {
+                    console.log(err)
+                }
+                let token = reply
+                if (!token) {
+                    token = jwtUtils.generateToken(userFound)
+                    client.set(userFound.id, token, 'EX', 60*60, redis.print)
+                }
+                //Retourne l'id et le token du user
+                return res.status(200).json({
+                    'userId': userFound.id,
+                    'token': token
+                });
+            })
         } else {
             return res.status(404).json({ 'erreur': "utilisateur n'existe pas"})
         }
     })
     .catch ((error) => {
-        return res.status(500).json({ 'erreur': "impossible de connecter l'utilisateur"})
+        return res.status(500).json({ 'erreur': "impossible de connecter l'utilisateur :" + error})
     });
 });
 
